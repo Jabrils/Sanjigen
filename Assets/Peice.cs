@@ -52,6 +52,11 @@ public class Peice
         active = true;
     }
 
+    public void Glow()
+    {
+        rend.material.SetInt("_Glow", 1);
+    }
+
     public void Update()
     {
         if (active)

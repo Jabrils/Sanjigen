@@ -11,6 +11,7 @@ public class RCVR_Board_Pos : MonoBehaviour
     public GameObject obj_Peice;
     Peice peice;
 
+
     void Start()
     {
         objectRenderer = GetComponent<Renderer>();
