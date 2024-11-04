@@ -35,7 +35,7 @@ public class RCVR_Board_Pos : MonoBehaviour
     void OnMouseEnter()
     {
         // Change to hover material when mouse enters
-        if (!peice.board.ActiveBoardState(peice.id))
+        if (!peice.board.ActiveBoardState(peice.id) && peice.board.game_Active)
         {
             objectRenderer.material = mat_Display;
         }
@@ -44,9 +44,9 @@ public class RCVR_Board_Pos : MonoBehaviour
     void OnMouseDown()
     {
         //print(peice.id);
-        if (!peice.board.ActiveBoardState(peice.id))
+        if (!peice.board.ActiveBoardState(peice.id) && peice.board.game_Active)
         {
-            peice.Activate();
+            peice.board.SelectPosition(peice.id);
             objectRenderer.material = mat_Transparent; // Change back to default material when mouse exits
         }
     }

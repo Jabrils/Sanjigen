@@ -19,6 +19,7 @@ public class ctrl_board : MonoBehaviour
     HashSet<int> remaining = new HashSet<int>();
     public TextMeshProUGUI[] txt_Score;
     int[] pts = new int[2];
+    internal bool game_Active => pts[0] < 3 && pts[1] < 3;
 
     // Start is called before the first frame update
     void Awake()
@@ -147,7 +148,7 @@ public class ctrl_board : MonoBehaviour
 
     void SelectRandomPosition()
     {
-        if (remaining.Count == 0)
+        if (remaining.Count == 0 || turn_Display == 0)
         { return; }
 
         System.Random random = new System.Random();
@@ -156,9 +157,9 @@ public class ctrl_board : MonoBehaviour
         SelectPosition(p);
     }
 
-    void SelectPosition(int p)
+    public void SelectPosition(int p)
     {
-        if (pts[0] < 3 && pts[1] < 3)
+        if (game_Active)
         {
             peice[p].Activate();
             remaining.Remove(p);
