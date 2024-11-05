@@ -4,6 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 public class ctrl_board : MonoBehaviour
 {
@@ -18,6 +19,7 @@ public class ctrl_board : MonoBehaviour
     HashSet<string> win_Pos = new HashSet<string>();
     HashSet<int> remaining = new HashSet<int>();
     public TextMeshProUGUI[] txt_Score;
+    public TextMeshProUGUI[] txt_Wins;
     int[] pts = new int[2];
     internal bool game_Active => pts[0] < 3 && pts[1] < 3;
 
@@ -131,6 +133,13 @@ public class ctrl_board : MonoBehaviour
         return points.ToArray();
     }
 
+    private void Start()
+    {
+        for (int i = 0; i < txt_Wins.Length; i++)
+        {
+            txt_Wins[i].text = $"{GM.wins[i]} / {GM.total}";
+        }
+    }
 
     // Update is called once per frame
     void Update()
@@ -148,8 +157,18 @@ public class ctrl_board : MonoBehaviour
 
     void SelectRandomPosition()
     {
-        if (remaining.Count == 0 || turn_Display == 0)
-        { return; }
+        if (remaining.Count == 0)// || turn_Display == 0)
+        {
+            GM.total++;
+            print($"END 1\n{GM.wins[0]} : {GM.wins[1]} | {pts[0]} : {pts[1]}");
+            GM.wins[0] += Mathf.FloorToInt(pts[0] / 3);
+            GM.wins[1] += Mathf.FloorToInt(pts[1] / 3);
+            
+            print($"END 2\n{GM.wins[0]} : {GM.wins[1]} | {pts[0]} : {pts[1]}");
+
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            return;
+        }
 
         System.Random random = new System.Random();
         int p = remaining.ElementAt(random.Next(remaining.Count));
@@ -163,6 +182,15 @@ public class ctrl_board : MonoBehaviour
         {
             peice[p].Activate();
             remaining.Remove(p);
+        }
+        else
+        {
+            GM.total++;
+            GM.wins[0] += (pts[0] / 3);
+            GM.wins[1] += (pts[1] / 3);
+            print($"REG: {GM.wins[0]} : {GM.wins[1]} | {pts[0]} : {pts[1]}");
+
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 
@@ -190,6 +218,7 @@ public class ctrl_board : MonoBehaviour
 
         pts = new int[2];
 
+        // 
         for (int i = 0; i < p.Length; i++)
         {
             int who = p[i].who;
@@ -204,6 +233,15 @@ public class ctrl_board : MonoBehaviour
             }
         }
 
+        // 
+        if (!game_Active)
+        {
+            //for (int i = 0; i < p.Length; i++)
+            //{
+            //    p[i].Print();
+            //}
+
+        }
     }
 }
 
@@ -216,5 +254,10 @@ public class Point
     {
         this.who = who;
         this.pos = pos;
+    }
+
+    public void Print()
+    {
+        Debug.Log($"{who} -> {pos[0]} | {pos[1]} | {pos[2]}");
     }
 }
