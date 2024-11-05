@@ -35,6 +35,6 @@ public class ctrl : MonoBehaviour
 
 public static class GM
 {
-    public static int total;
-    public static int[] wins = new int[2];
+    //public static int total;
+    //public static int[] wins = new int[2];
 }

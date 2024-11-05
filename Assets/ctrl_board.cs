@@ -133,11 +133,14 @@ public class ctrl_board : MonoBehaviour
         return points.ToArray();
     }
 
-    private void Start()
+    void Start()
     {
         for (int i = 0; i < txt_Wins.Length; i++)
         {
-            txt_Wins[i].text = $"{GM.wins[i]} / {GM.total}";
+            int w = PlayerPrefs.GetInt($"wins_{i}");
+            int t = PlayerPrefs.GetInt($"total");
+
+            txt_Wins[i].text = $"{w:n0} / {t:n0}";
         }
     }
 
@@ -159,13 +162,7 @@ public class ctrl_board : MonoBehaviour
     {
         if (remaining.Count == 0)// || turn_Display == 0)
         {
-            GM.total++;
-            print($"END 1\n{GM.wins[0]} : {GM.wins[1]} | {pts[0]} : {pts[1]}");
-            GM.wins[0] += Mathf.FloorToInt(pts[0] / 3);
-            GM.wins[1] += Mathf.FloorToInt(pts[1] / 3);
-            
-            print($"END 2\n{GM.wins[0]} : {GM.wins[1]} | {pts[0]} : {pts[1]}");
-
+            AddWins();
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             return;
         }
@@ -174,6 +171,21 @@ public class ctrl_board : MonoBehaviour
         int p = remaining.ElementAt(random.Next(remaining.Count));
 
         SelectPosition(p);
+    }
+
+    void AddWins()
+    {
+        int t = PlayerPrefs.GetInt($"total");
+
+        PlayerPrefs.SetInt("total", t + 1);
+
+        // 
+        for (int i = 0; i < 2; i++)
+        {
+            int w = PlayerPrefs.GetInt($"wins_{i}");
+
+            PlayerPrefs.SetInt($"wins_{i}", w + pts[i] / 3);
+        }
     }
 
     public void SelectPosition(int p)
@@ -185,10 +197,8 @@ public class ctrl_board : MonoBehaviour
         }
         else
         {
-            GM.total++;
-            GM.wins[0] += (pts[0] / 3);
-            GM.wins[1] += (pts[1] / 3);
-            print($"REG: {GM.wins[0]} : {GM.wins[1]} | {pts[0]} : {pts[1]}");
+            AddWins();
+            //print($"REG: {GM.wins[0]} : {GM.wins[1]} | {pts[0]} : {pts[1]}");
 
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
@@ -196,7 +206,8 @@ public class ctrl_board : MonoBehaviour
 
     IEnumerator rPos()
     {
-        yield return new WaitForSeconds(.1f);
+        //yield return new WaitForSeconds(.1f);
+        yield return new WaitForEndOfFrame();
         SelectRandomPosition();
         StartCoroutine(rPos());
     }
@@ -224,7 +235,7 @@ public class ctrl_board : MonoBehaviour
             int who = p[i].who;
 
             pts[who] += 1;
-            txt_Score[who].text = $"P{i}\n{pts[who]}";
+            txt_Score[who].text = $"{(who == 0 ? "Yellow" : "Blue")}\n{pts[who]}";
 
             // 
             for (int j = 0; j < p[i].pos.Length; j++)
