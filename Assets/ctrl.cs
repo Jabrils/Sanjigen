@@ -11,8 +11,8 @@ public class ctrl : MonoBehaviour
 
     void Update()
     {
-        float rotationX = .33f;
-        float rotationY = .247f;
+        float rotationX = 0; // .33f;
+        float rotationY = 0; // .247f;
 
         // 
         if (Input.GetMouseButtonDown(0)) // Left mouse button clicked

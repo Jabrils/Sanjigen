@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 
 public class ctrl_board : MonoBehaviour
 {
+    public bool random_Games;
     int turn;
     public int turn_Display => turn % 2 == 0 ? 0 : 1;
     public List<Peice> peice;
@@ -83,7 +84,6 @@ public class ctrl_board : MonoBehaviour
         // 
         for (int i = 0; i < p.Length; i++)
         {
-
             Transform pp = p[i].transform;
 
             // 
@@ -99,7 +99,11 @@ public class ctrl_board : MonoBehaviour
             }
         }
 
-        StartCoroutine(rPos());
+        // 
+        if (random_Games)
+        {
+            StartCoroutine(rPos());
+        }
     }
 
     // Check if a player has a winning position
@@ -206,8 +210,8 @@ public class ctrl_board : MonoBehaviour
 
     IEnumerator rPos()
     {
-        //yield return new WaitForSeconds(.1f);
-        yield return new WaitForEndOfFrame();
+        yield return new WaitForSeconds(2f);
+        //yield return new WaitForEndOfFrame();
         SelectRandomPosition();
         StartCoroutine(rPos());
     }
