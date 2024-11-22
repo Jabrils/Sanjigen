@@ -9,7 +9,7 @@ public class RCVR_Board_Pos : MonoBehaviour
 
     Renderer objectRenderer;
     public GameObject obj_Peice;
-    Peice peice;
+    internal Peice piece;
 
 
     void Start()
@@ -24,7 +24,7 @@ public class RCVR_Board_Pos : MonoBehaviour
 
         //print($"{obj_Peice.name} | {id}");
 
-        peice = p.peice[id];
+        piece = p.peice[id];
     }
 
     public void Unparent()
@@ -32,10 +32,15 @@ public class RCVR_Board_Pos : MonoBehaviour
         transform.SetParent(GameObject.Find("board").transform);
     }
 
+    public void Update()
+    {
+      
+    }
+
     void OnMouseEnter()
     {
         // Change to hover material when mouse enters
-        if (!peice.board.ActiveBoardState(peice.id) && peice.board.game_Active)
+        if (!piece.board.ActiveBoardState(piece.id) && piece.board.game_Active)
         {
             objectRenderer.material = mat_Display;
         }
@@ -43,10 +48,16 @@ public class RCVR_Board_Pos : MonoBehaviour
 
     void OnMouseDown()
     {
+
         //print(peice.id);
-        if (!peice.board.ActiveBoardState(peice.id) && peice.board.game_Active)
+        if (piece.board.game_Type == ctrl_board.Game_Type.vsH && piece.board.turn_Display == 0)
         {
-            peice.board.SelectPosition(peice.id);
+            return;
+        }
+
+        if (!piece.board.ActiveBoardState(piece.id) && piece.board.game_Active)
+        {
+            piece.board.SelectPosition(piece.id);
             objectRenderer.material = mat_Transparent; // Change back to default material when mouse exits
         }
     }

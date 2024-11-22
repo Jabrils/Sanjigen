@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,8 @@ using UnityEngine.SceneManagement;
 
 public class ctrl_board : MonoBehaviour
 {
-    public bool random_Games;
+    public enum Game_Type { self, aivai, vsH};
+    public Game_Type game_Type;
     int turn;
     public int turn_Display => turn % 2 == 0 ? 0 : 1;
     public List<Peice> peice;
@@ -23,6 +25,38 @@ public class ctrl_board : MonoBehaviour
     public TextMeshProUGUI[] txt_Wins;
     int[] pts = new int[2];
     internal bool game_Active => pts[0] < 3 && pts[1] < 3;
+    HashSet<int> corners = new HashSet<int> { 0, 2, 6, 8, 12, 14, 18, 20 }; // 6
+    HashSet<int> edges = new HashSet<int> { 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 }; // 3
+    HashSet<int> centers = new HashSet<int> { 4, 10, 16, 22, 24, 25 }; // 4
+    Dictionary<int, int> base_Value = new Dictionary<int, int>
+    {
+        { 0, 6},
+        { 1, 3},
+        { 2, 6},
+        { 3, 3},
+        { 4, 4},
+        { 5, 3},
+        { 6, 6},
+        { 7, 3},
+        { 8, 6},
+        { 9, 3},
+        { 10, 4},
+        { 11, 3},
+        { 12, 6},
+        { 13, 3},
+        { 14, 6},
+        { 15, 3},
+        { 16, 4},
+        { 17, 3},
+        { 18, 6},
+        { 19, 3},
+        { 20, 6},
+        { 21, 3},
+        { 22, 4},
+        { 23, 3},
+        { 24, 4},
+        { 25, 4},
+    };
 
     // Start is called before the first frame update
     void Awake()
@@ -51,6 +85,7 @@ public class ctrl_board : MonoBehaviour
         win_Pos.Add("0,18,21");
         win_Pos.Add("1,19,22");
         win_Pos.Add("2,20,23");
+        win_Pos.Add("9,21,24");
 
         win_Pos.Add("11,23,25");
 
@@ -70,7 +105,7 @@ public class ctrl_board : MonoBehaviour
         win_Pos.Add("2,18,22");
 
         win_Pos.Add("0,12,24");
-        win_Pos.Add("6,12,24");
+        win_Pos.Add("6,18,24");
 
         win_Pos.Add("2,14,25");
         win_Pos.Add("8,20,25");
@@ -100,11 +135,84 @@ public class ctrl_board : MonoBehaviour
         }
 
         // 
-        if (random_Games)
+        if (game_Type == Game_Type.aivai)
         {
-            StartCoroutine(rPos());
+            StartCoroutine(rPos2());
         }
     }
+
+    public float EvalutePosition(int pos)
+    {
+        // List to hold all the lines (win conditions) affected by the given position
+        List<int[]> affected = new List<int[]>();
+
+        // Iterate through all possible win conditions stored in win_Pos
+        foreach (var value in win_Pos)
+        {
+            // Split the current win condition (stored as a comma-separated string) into a string array
+            string[] val = value.Split(',');
+
+            // Convert the string array into an integer array for numerical processing
+            int[] intArray = Array.ConvertAll(val, int.Parse);
+
+            // Check if the current position is part of this win condition
+            bool contains = intArray.Contains(pos);
+
+            // If the current position is part of this win condition, add it to the affected list
+            if (contains)
+            {
+                affected.Add(intArray);
+            }
+        }
+
+        // Variable to store the overall evaluation of the given position
+        int oOverall = 0;
+
+        // Iterate through all the affected line
+        for (int i = 0; i < affected.Count; i++)
+        {
+            // Variable to store the cumulative value for this particular line
+            int overall = 0;
+
+            // Iterate through all positions in the current line
+            for (int j = 0; j < affected[i].Length; j++)
+            {
+                int current_Pos = affected[i][j];
+                
+                overall += base_Value[pos];
+
+                // Check if the position in the current line is present on the board
+                if (board.ContainsKey(current_Pos))
+                {
+                    // Determine if the position is owned by the current player (true) or the opponent (false)
+                    bool mine = turn_Display == board[current_Pos];
+
+                    // Print debug information about the current turn, position, and evaluation
+                    //print($"TURN: {turn_Display} | POS: {current_Pos} | {(mine ? "1" : "-1")} * {base_Value[current_Pos]}");
+
+
+                    // Calculate the value for the position: positive if owned by the current player, negative if owned by the opponent
+                    int value = (mine ? 1 : -1) * base_Value[current_Pos];
+
+                    // Add the value to the cumulative score for this win condition
+                    overall += value;
+                }
+            }
+
+            // Add the cumulative value of this line to the overall evaluation
+            oOverall += overall;
+        }
+
+        // Print the overall evaluation value for debugging
+        //print($"oO: {oOverall}");
+
+        // Calculate and print the average evaluation for the given position
+        //print($"Value for Pos {pos}: {(float)oOverall / affected.Count}");
+
+        // Return the average evaluation for the given position
+        return Mathf.Abs((float)oOverall / affected.Count);
+    }
+
 
     // Check if a player has a winning position
     Point[] CheckForWinner()
@@ -156,10 +264,30 @@ public class ctrl_board : MonoBehaviour
             peice[i].Update();
         }
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (game_Type == Game_Type.vsH && turn_Display == 0)
         {
-            SelectRandomPosition();
+            SelectEvaluatedPosition();
         }
+
+        //if (Input.GetKeyDown(KeyCode.Backspace))
+        //{
+        //    SelectRandomPosition();
+        //}
+        //if (Input.GetKeyDown(KeyCode.Space))
+        //{
+        //    Dictionary<int, float> evaluation = new Dictionary<int, float>();
+
+        //    foreach (int pos in remaining)
+        //    {
+        //        float grab = EvalutePosition(pos);
+
+        //        evaluation.Add(pos, grab);
+        //    }
+
+        //    Dictionary<int, float> ordered = evaluation.OrderByDescending(pair => pair.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        //    print($"I SELECTED: {ordered.Keys.First()}");
+        //}
     }
 
     void SelectRandomPosition()
@@ -167,7 +295,7 @@ public class ctrl_board : MonoBehaviour
         if (remaining.Count == 0)// || turn_Display == 0)
         {
             AddWins();
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             return;
         }
 
@@ -204,16 +332,49 @@ public class ctrl_board : MonoBehaviour
             AddWins();
             //print($"REG: {GM.wins[0]} : {GM.wins[1]} | {pts[0]} : {pts[1]}");
 
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 
     IEnumerator rPos()
     {
-        yield return new WaitForSeconds(2f);
         //yield return new WaitForEndOfFrame();
         SelectRandomPosition();
+        yield return new WaitForSeconds(2f);
         StartCoroutine(rPos());
+    }
+
+    IEnumerator rPos2()
+    {
+        //yield return new WaitForEndOfFrame();
+        SelectEvaluatedPosition();
+        yield return new WaitForSeconds(2f);
+        StartCoroutine(rPos2());
+    }
+
+    void SelectEvaluatedPosition()
+    {
+        Dictionary<int, float> evaluation = new Dictionary<int, float>();
+
+        foreach (int pos in remaining)
+        {
+            float grab = EvalutePosition(pos);
+
+            evaluation.Add(pos, grab);
+        }
+
+        // 
+        Dictionary<int, float> ordered = evaluation.OrderByDescending(pair => pair.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        //// 
+        //for (int i = 0; i < ordered.Count; i++)
+        //{
+        //    print($"{ordered.Keys.ElementAt(i)} : {ordered[i]}");
+        //}
+
+        int pos_I_Select = ordered.Keys.First();
+
+        SelectPosition(pos_I_Select);
     }
 
     public bool ActiveBoardState(int boardIndex)
@@ -241,11 +402,16 @@ public class ctrl_board : MonoBehaviour
             pts[who] += 1;
             txt_Score[who].text = $"{(who == 0 ? "Yellow" : "Blue")}\n{pts[who]}";
 
+            string ppp = "";
+
             // 
             for (int j = 0; j < p[i].pos.Length; j++)
             {
                 peice[p[i].pos[j]].Glow();
+                ppp += $"{p[i].pos[j]},";
             }
+
+            print(ppp);
         }
 
         // 

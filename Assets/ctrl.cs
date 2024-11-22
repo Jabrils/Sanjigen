@@ -4,10 +4,16 @@ using UnityEngine;
 
 public class ctrl : MonoBehaviour
 {
+    ctrl_board the_Board;
     public GameObject board;
 
     public float rotationSpeed = 100f;
     private Vector3 lastMousePosition;
+
+    void Start()
+    {
+        the_Board = FindObjectOfType<ctrl_board>();
+    }
 
     void Update()
     {
@@ -31,7 +37,38 @@ public class ctrl : MonoBehaviour
         board.transform.Rotate(Vector3.up, rotationY, Space.World);
         board.transform.Rotate(-Vector3.right, rotationX, Space.World);
     }
+
+    void HandleRightClick()
+    {
+        // Perform a raycast from the mouse position
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit))
+        {
+            // Check if the object has the RCVR_Board_Pos component or any relevant component
+            var boardPos = hit.collider.GetComponent<RCVR_Board_Pos>();
+            if (boardPos != null)
+            {
+                // Access the Piece ID or other properties from the board position
+                int pieceId = boardPos.piece.id;
+                Debug.Log($"Right-clicked on piece with ID: {pieceId}");
+
+                // Evaluate the board using the control board logic
+                the_Board.EvalutePosition(pieceId);
+            }
+            else
+            {
+                Debug.Log("Right-clicked on a non-board object.");
+            }
+        }
+        else
+        {
+            Debug.Log("Right-clicked on empty space.");
+        }
+    }
 }
+
 
 public static class GM
 {
