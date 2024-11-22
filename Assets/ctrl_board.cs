@@ -174,6 +174,8 @@ public class ctrl_board : MonoBehaviour
             // Variable to store the cumulative value for this particular line
             int overall = 0;
 
+            int scalar = 0;
+
             // Iterate through all positions in the current line
             for (int j = 0; j < affected[i].Length; j++)
             {
@@ -186,6 +188,8 @@ public class ctrl_board : MonoBehaviour
                 {
                     // Determine if the position is owned by the current player (true) or the opponent (false)
                     bool mine = turn_Display == board[current_Pos];
+                    scalar += mine ? 1 : 0;
+                    //print($"{affected[i][0]},{affected[i][1]},{affected[i][2]} | {current_Pos} | {mine}");
 
                     // Print debug information about the current turn, position, and evaluation
                     //print($"TURN: {turn_Display} | POS: {current_Pos} | {(mine ? "1" : "-1")} * {base_Value[current_Pos]}");
@@ -198,9 +202,11 @@ public class ctrl_board : MonoBehaviour
                     overall += value;
                 }
             }
+            scalar = (int)MathF.Max(1, scalar);
+            //print(scalar);
 
             // Add the cumulative value of this line to the overall evaluation
-            oOverall += overall;
+            oOverall += overall * scalar;
         }
 
         // Print the overall evaluation value for debugging
