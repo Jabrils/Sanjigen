@@ -50,7 +50,7 @@ public class RCVR_Board_Pos : MonoBehaviour
     {
 
         //print(peice.id);
-        if (piece.board.game_Type == ctrl_board.Game_Type.vsH && piece.board.turn_Display == 0)
+        if (piece.board.player[piece.board.turn_Display] != ctrl_board.Player.self)
         {
             return;
         }

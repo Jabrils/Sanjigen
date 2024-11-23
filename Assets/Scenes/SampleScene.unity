@@ -2850,7 +2850,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 550731e802e97714c9804ae99dd4daaf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  game_Type: 2
+  game_Type: 1
   mat_Yellow: {fileID: 2100000, guid: 06c111cd25e50114891b722db55a05d4, type: 2}
   mat_Blue: {fileID: 2100000, guid: 090013ca5310c194b997e70288b9d2be, type: 2}
   mat_Outline: {fileID: 2100000, guid: cc38c601fa481954c831394876c782fa, type: 2}

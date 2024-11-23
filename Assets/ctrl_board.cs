@@ -9,8 +9,16 @@ using UnityEngine.SceneManagement;
 
 public class ctrl_board : MonoBehaviour
 {
-    public enum Game_Type { self, aivai, vsH};
-    public Game_Type game_Type;
+    public enum Player { self, random, heuristic };
+    public Player player1, player2;
+
+    internal Player[] player => new Player[]
+    {
+        player1,
+        player2,
+    };
+    //public enum Game_Type { self, aivai, vsH};
+    //public Game_Type game_Type;
     int turn;
     public int turn_Display => turn % 2 == 0 ? 0 : 1;
     public List<Peice> peice;
@@ -24,42 +32,84 @@ public class ctrl_board : MonoBehaviour
     public TextMeshProUGUI[] txt_Score;
     public TextMeshProUGUI[] txt_Wins;
     int[] pts = new int[2];
-    internal bool game_Active => pts[0] < 3 && pts[1] < 3;
-    HashSet<int> corners = new HashSet<int> { 0, 2, 6, 8, 12, 14, 18, 20 }; // 6
-    HashSet<int> edges = new HashSet<int> { 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 }; // 3
-    HashSet<int> centers = new HashSet<int> { 4, 10, 16, 22, 24, 25 }; // 4
-    Dictionary<int, int> base_Value = new Dictionary<int, int>
-    {
-        { 0, 6},
-        { 1, 3},
-        { 2, 6},
-        { 3, 3},
-        { 4, 4},
-        { 5, 3},
-        { 6, 6},
-        { 7, 3},
-        { 8, 6},
-        { 9, 3},
-        { 10, 4},
-        { 11, 3},
-        { 12, 6},
-        { 13, 3},
-        { 14, 6},
-        { 15, 3},
-        { 16, 4},
-        { 17, 3},
-        { 18, 6},
-        { 19, 3},
-        { 20, 6},
-        { 21, 3},
-        { 22, 4},
-        { 23, 3},
-        { 24, 4},
-        { 25, 4},
-    };
+    internal bool game_Active => true;// pts[0] < 3 && pts[1] < 3;
+    //HashSet<int> corners = new HashSet<int> { 0, 2, 6, 8, 12, 14, 18, 20 }; // 6
+    //HashSet<int> edges = new HashSet<int> { 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 }; // 3
+    //HashSet<int> centers = new HashSet<int> { 4, 10, 16, 22, 24, 25 }; // 4
+    Dictionary<int, int> base_Value = new Dictionary<int, int>();
+    int corner = 6;
+    int edge = 3;
+    int center = 4;
 
     // Start is called before the first frame update
     void Awake()
+    {
+        AddWinPos();
+
+        AssignBaseValues();
+
+        //GameObject[] p = GameObject.FindGameObjectsWithTag("Peice");
+        Transform[] p = transform.GetComponentsInChildren<Transform>();
+
+        // 
+        peice = new List<Peice>();
+
+        // 
+        for (int i = 0; i < p.Length; i++)
+        {
+            Transform pp = p[i].transform;
+
+            // 
+            if (pp.tag == "Peice")
+            {
+
+                Peice new_Peice = new Peice(this, pp, pp.localPosition + pp.forward * 1, pp.localPosition);
+                new_Peice.UnparentBoardPos();
+
+                new_Peice.SetToStart();
+                peice.Add(new_Peice);
+                remaining.Add(new_Peice.id);
+            }
+        }
+
+        StartCoroutine(MoveForAI());
+        //// 
+        //if (game_Type == Game_Type.aivai)
+        //{
+        //}
+    }
+
+    private void AssignBaseValues()
+    {
+        base_Value.Add(0, corner);
+        base_Value.Add(1, edge);
+        base_Value.Add(2, corner);
+        base_Value.Add(3, edge);
+        base_Value.Add(4, center);
+        base_Value.Add(5, edge);
+        base_Value.Add(6, corner);
+        base_Value.Add(7, edge);
+        base_Value.Add(8, corner);
+        base_Value.Add(9, edge);
+        base_Value.Add(10, center);
+        base_Value.Add(11, edge);
+        base_Value.Add(12, corner);
+        base_Value.Add(13, edge);
+        base_Value.Add(14, corner);
+        base_Value.Add(15, edge);
+        base_Value.Add(16, center);
+        base_Value.Add(17, edge);
+        base_Value.Add(18, corner);
+        base_Value.Add(19, edge);
+        base_Value.Add(20, corner);
+        base_Value.Add(21, edge);
+        base_Value.Add(22, center);
+        base_Value.Add(23, edge);
+        base_Value.Add(24, center);
+        base_Value.Add(25, center);
+    }
+
+    private void AddWinPos()
     {
         win_Pos.Add("0,1,2");
         win_Pos.Add("3,4,5");
@@ -109,36 +159,6 @@ public class ctrl_board : MonoBehaviour
 
         win_Pos.Add("2,14,25");
         win_Pos.Add("8,20,25");
-
-        //GameObject[] p = GameObject.FindGameObjectsWithTag("Peice");
-        Transform[] p = transform.GetComponentsInChildren<Transform>();
-
-        // 
-        peice = new List<Peice>();
-
-        // 
-        for (int i = 0; i < p.Length; i++)
-        {
-            Transform pp = p[i].transform;
-
-            // 
-            if (pp.tag == "Peice")
-            {
-
-                Peice new_Peice = new Peice(this, pp, pp.localPosition + pp.forward * 1, pp.localPosition);
-                new_Peice.UnparentBoardPos();
-
-                new_Peice.SetToStart();
-                peice.Add(new_Peice);
-                remaining.Add(new_Peice.id);
-            }
-        }
-
-        // 
-        if (game_Type == Game_Type.aivai)
-        {
-            StartCoroutine(rPos2());
-        }
     }
 
     public float EvalutePosition(int pos)
@@ -180,7 +200,7 @@ public class ctrl_board : MonoBehaviour
             for (int j = 0; j < affected[i].Length; j++)
             {
                 int current_Pos = affected[i][j];
-                
+
                 overall += base_Value[pos];
 
                 // Check if the position in the current line is present on the board
@@ -270,10 +290,6 @@ public class ctrl_board : MonoBehaviour
             peice[i].Update();
         }
 
-        if (game_Type == Game_Type.vsH && turn_Display == 0)
-        {
-            SelectEvaluatedPosition();
-        }
 
         //if (Input.GetKeyDown(KeyCode.Backspace))
         //{
@@ -342,9 +358,24 @@ public class ctrl_board : MonoBehaviour
         }
     }
 
+    IEnumerator MoveForAI()
+    {
+
+        if (player[turn_Display] == Player.random)
+        {
+            SelectRandomPosition();
+        }
+        else if (player[turn_Display] == Player.heuristic)
+        {
+            SelectEvaluatedPosition();
+        }
+
+        yield return new WaitForSeconds(5f);
+        StartCoroutine(MoveForAI());
+    }
+
     IEnumerator rPos()
     {
-        //yield return new WaitForEndOfFrame();
         SelectRandomPosition();
         yield return new WaitForSeconds(2f);
         StartCoroutine(rPos());
@@ -352,7 +383,6 @@ public class ctrl_board : MonoBehaviour
 
     IEnumerator rPos2()
     {
-        //yield return new WaitForEndOfFrame();
         SelectEvaluatedPosition();
         yield return new WaitForSeconds(2f);
         StartCoroutine(rPos2());
@@ -417,7 +447,7 @@ public class ctrl_board : MonoBehaviour
                 ppp += $"{p[i].pos[j]},";
             }
 
-            print(ppp);
+            //print(ppp);
         }
 
         // 
