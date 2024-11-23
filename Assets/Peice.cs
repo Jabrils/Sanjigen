@@ -64,11 +64,15 @@ public class Peice
             obj.localPosition = Vector3.Lerp(obj.localPosition, end, Time.deltaTime * 4);
             alpha = Mathf.Lerp(alpha, 1, Time.deltaTime * 4);
 
+            bool highlight = board.last_Select == id;
+
             // 
-            for (int i = 0; i < rend.materials.Length; i++)
-            {
-                rend.materials[i].SetFloat("_Alpha", alpha);
-            }
+            rend.materials[0].SetFloat("_Alpha", alpha);
+            rend.materials[1].SetFloat("_Alpha", (highlight ? -1 : 1) * alpha);
+
+            //for (int i = 0; i < rend.materials.Length; i++)
+            //{
+            //}
         }
     }
 }

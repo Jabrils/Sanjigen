@@ -3,13 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 public class ctrl_board : MonoBehaviour
 {
-    public enum Player { self, random, heuristic };
+    public enum Player { self, random, expensive, cheap, foolish, dumdum };
     public Player player1, player2;
 
     internal Player[] player => new Player[]
@@ -31,22 +32,28 @@ public class ctrl_board : MonoBehaviour
     HashSet<int> remaining = new HashSet<int>();
     public TextMeshProUGUI[] txt_Score;
     public TextMeshProUGUI[] txt_Wins;
+    HashSet<int[]> line_Store = new HashSet<int[]>();
     int[] pts = new int[2];
+    public int last_Select;
     internal bool game_Active => true;// pts[0] < 3 && pts[1] < 3;
     //HashSet<int> corners = new HashSet<int> { 0, 2, 6, 8, 12, 14, 18, 20 }; // 6
     //HashSet<int> edges = new HashSet<int> { 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 }; // 3
     //HashSet<int> centers = new HashSet<int> { 4, 10, 16, 22, 24, 25 }; // 4
-    Dictionary<int, int> base_Value = new Dictionary<int, int>();
-    int corner = 6;
-    int edge = 3;
-    int center = 4;
+    int[] corner = new int[] { 6, 3, 1, 0, };
+    int[] edge = new int[] { 3, 2, 1, 0, };
+    int[] center = new int[] { 4, 1, 1, 0, };
+    public float AI_Move_Time = 2f;
+    AI_Type expensive, cheap, foolish, dumdum;
 
     // Start is called before the first frame update
     void Awake()
     {
         AddWinPos();
 
-        AssignBaseValues();
+        expensive = AssignBaseValues(0);
+        cheap = AssignBaseValues(1);
+        foolish = AssignBaseValues(2);
+        dumdum = AssignBaseValues(3);
 
         //GameObject[] p = GameObject.FindGameObjectsWithTag("Peice");
         Transform[] p = transform.GetComponentsInChildren<Transform>();
@@ -79,34 +86,38 @@ public class ctrl_board : MonoBehaviour
         //}
     }
 
-    private void AssignBaseValues()
+    private AI_Type AssignBaseValues(int which)
     {
-        base_Value.Add(0, corner);
-        base_Value.Add(1, edge);
-        base_Value.Add(2, corner);
-        base_Value.Add(3, edge);
-        base_Value.Add(4, center);
-        base_Value.Add(5, edge);
-        base_Value.Add(6, corner);
-        base_Value.Add(7, edge);
-        base_Value.Add(8, corner);
-        base_Value.Add(9, edge);
-        base_Value.Add(10, center);
-        base_Value.Add(11, edge);
-        base_Value.Add(12, corner);
-        base_Value.Add(13, edge);
-        base_Value.Add(14, corner);
-        base_Value.Add(15, edge);
-        base_Value.Add(16, center);
-        base_Value.Add(17, edge);
-        base_Value.Add(18, corner);
-        base_Value.Add(19, edge);
-        base_Value.Add(20, corner);
-        base_Value.Add(21, edge);
-        base_Value.Add(22, center);
-        base_Value.Add(23, edge);
-        base_Value.Add(24, center);
-        base_Value.Add(25, center);
+        AI_Type ait = new AI_Type();
+
+        ait.base_Value.Add(0, corner[which]);
+        ait.base_Value.Add(1, edge[which]);
+        ait.base_Value.Add(2, corner[which]);
+        ait.base_Value.Add(3, edge[which]);
+        ait.base_Value.Add(4, center[which]);
+        ait.base_Value.Add(5, edge[which]);
+        ait.base_Value.Add(6, corner[which]);
+        ait.base_Value.Add(7, edge[which]);
+        ait.base_Value.Add(8, corner[which]);
+        ait.base_Value.Add(9, edge[which]);
+        ait.base_Value.Add(10, center[which]);
+        ait.base_Value.Add(11, edge[which]);
+        ait.base_Value.Add(12, corner[which]);
+        ait.base_Value.Add(13, edge[which]);
+        ait.base_Value.Add(14, corner[which]);
+        ait.base_Value.Add(15, edge[which]);
+        ait.base_Value.Add(16, center[which]);
+        ait.base_Value.Add(17, edge[which]);
+        ait.base_Value.Add(18, corner[which]);
+        ait.base_Value.Add(19, edge[which]);
+        ait.base_Value.Add(20, corner[which]);
+        ait.base_Value.Add(21, edge[which]);
+        ait.base_Value.Add(22, center[which]);
+        ait.base_Value.Add(23, edge[which]);
+        ait.base_Value.Add(24, center[which]);
+        ait.base_Value.Add(25, center[which]);
+
+        return ait;
     }
 
     private void AddWinPos()
@@ -161,7 +172,7 @@ public class ctrl_board : MonoBehaviour
         win_Pos.Add("8,20,25");
     }
 
-    public float EvalutePosition(int pos)
+    public float EvalutePosition(AI_Type ait, int pos)
     {
         // List to hold all the lines (win conditions) affected by the given position
         List<int[]> affected = new List<int[]>();
@@ -201,7 +212,7 @@ public class ctrl_board : MonoBehaviour
             {
                 int current_Pos = affected[i][j];
 
-                overall += base_Value[pos];
+                overall += ait.base_Value[pos];
 
                 // Check if the position in the current line is present on the board
                 if (board.ContainsKey(current_Pos))
@@ -216,7 +227,7 @@ public class ctrl_board : MonoBehaviour
 
 
                     // Calculate the value for the position: positive if owned by the current player, negative if owned by the opponent
-                    int value = (mine ? 1 : -1) * base_Value[current_Pos];
+                    int value = (mine ? 1 : -1) * ait.base_Value[current_Pos];
 
                     // Add the value to the cumulative score for this win condition
                     overall += value;
@@ -290,6 +301,7 @@ public class ctrl_board : MonoBehaviour
             peice[i].Update();
         }
 
+        //UpdateAllLineRenderers();
 
         //if (Input.GetKeyDown(KeyCode.Backspace))
         //{
@@ -344,6 +356,8 @@ public class ctrl_board : MonoBehaviour
 
     public void SelectPosition(int p)
     {
+        last_Select = p;
+
         if (game_Active)
         {
             peice[p].Activate();
@@ -365,36 +379,48 @@ public class ctrl_board : MonoBehaviour
         {
             SelectRandomPosition();
         }
-        else if (player[turn_Display] == Player.heuristic)
+        else if (player[turn_Display] == Player.expensive)
         {
-            SelectEvaluatedPosition();
+            SelectEvaluatedPosition(expensive);
+        }
+        else if (player[turn_Display] == Player.cheap)
+        {
+            SelectEvaluatedPosition(cheap);
+        }
+        else if (player[turn_Display] == Player.foolish)
+        {
+            SelectEvaluatedPosition(foolish);
+        }
+        else if (player[turn_Display] == Player.dumdum)
+        {
+            SelectEvaluatedPosition(dumdum);
         }
 
-        yield return new WaitForSeconds(5f);
+        yield return new WaitForSeconds(AI_Move_Time);
         StartCoroutine(MoveForAI());
     }
 
-    IEnumerator rPos()
-    {
-        SelectRandomPosition();
-        yield return new WaitForSeconds(2f);
-        StartCoroutine(rPos());
-    }
+    //IEnumerator rPos()
+    //{
+    //    SelectRandomPosition();
+    //    yield return new WaitForSeconds(2f);
+    //    StartCoroutine(rPos());
+    //}
 
-    IEnumerator rPos2()
-    {
-        SelectEvaluatedPosition();
-        yield return new WaitForSeconds(2f);
-        StartCoroutine(rPos2());
-    }
+    //IEnumerator rPos2()
+    //{
+    //    SelectEvaluatedPosition();
+    //    yield return new WaitForSeconds(2f);
+    //    StartCoroutine(rPos2());
+    //}
 
-    void SelectEvaluatedPosition()
+    void SelectEvaluatedPosition(AI_Type ait)
     {
         Dictionary<int, float> evaluation = new Dictionary<int, float>();
 
         foreach (int pos in remaining)
         {
-            float grab = EvalutePosition(pos);
+            float grab = EvalutePosition(ait, pos);
 
             evaluation.Add(pos, grab);
         }
@@ -428,6 +454,7 @@ public class ctrl_board : MonoBehaviour
         board.Add(pos, turn_Display);
         Point[] p = CheckForWinner();
 
+
         pts = new int[2];
 
         // 
@@ -438,28 +465,48 @@ public class ctrl_board : MonoBehaviour
             pts[who] += 1;
             txt_Score[who].text = $"{(who == 0 ? "Yellow" : "Blue")}\n{pts[who]}";
 
-            string ppp = "";
+            //string ppp = "";
 
             // 
             for (int j = 0; j < p[i].pos.Length; j++)
             {
                 peice[p[i].pos[j]].Glow();
-                ppp += $"{p[i].pos[j]},";
+                //ppp += $"{p[i].pos[j]},";
             }
 
             //print(ppp);
         }
-
-        // 
-        if (!game_Active)
-        {
-            //for (int i = 0; i < p.Length; i++)
-            //{
-            //    p[i].Print();
-            //}
-
-        }
     }
+
+    //public void UpdateAllLineRenderers()
+    //{
+    //    Point[] p = CheckForWinner();
+
+    //    // 
+    //    pts = new int[2];
+
+    //    // 
+    //    for (int i = 0; i < p.Length; i++)
+    //    {
+    //        if (line_Store.Contains(p[i].pos)) { continue; }
+
+    //        // create a new line renderer
+    //        GameObject lr = new GameObject();
+
+    //        LineRenderer lro = lr.AddComponent<LineRenderer>();
+    //        line_Store.Add(p[i].pos);
+    //        lro.positionCount = 3;
+
+    //        // 
+    //        for (int j = 0; j < p[i].pos.Length; j++)
+    //        {
+    //            // assign all of the position
+    //            lro.SetPosition(j, peice[p[i].pos[j]].obj.position);
+
+    //            // graphics
+    //        }
+    //    }
+    //}
 }
 
 public class Point
