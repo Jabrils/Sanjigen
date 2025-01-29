@@ -22,6 +22,7 @@ public class ctrl_board : MonoBehaviour
     //public Game_Type game_Type;
     int turn;
     public int turn_Display => turn % 2 == 0 ? 0 : 1;
+    public int turn_Display_Opp => turn_Display == 0 ? 1 : 0;
     public List<Peice> peice;
     public Material mat_Yellow;
     public Material mat_Blue;
@@ -396,7 +397,7 @@ public class ctrl_board : MonoBehaviour
             SelectEvaluatedPosition(dumdum);
         }
 
-        yield return new WaitForSeconds(AI_Move_Time);
+        yield return new WaitForSeconds((UnityEngine.Random.value * AI_Move_Time) + .5f);
         StartCoroutine(MoveForAI());
     }
 
@@ -454,6 +455,7 @@ public class ctrl_board : MonoBehaviour
         board.Add(pos, turn_Display);
         Point[] p = CheckForWinner();
 
+        ctrl.self.PlayMoveSFX(Menu.second ? turn_Display_Opp : turn_Display);
 
         pts = new int[2];
 
@@ -463,7 +465,7 @@ public class ctrl_board : MonoBehaviour
             int who = p[i].who;
 
             pts[who] += 1;
-            txt_Score[who].text = $"{(who == 0 ? "Yellow" : "Blue")}\n{pts[who]}";
+            txt_Score[who].text = $"{pts[who]}";
 
             //string ppp = "";
 
@@ -475,6 +477,15 @@ public class ctrl_board : MonoBehaviour
             }
 
             //print(ppp);
+        }
+
+        if (remaining.Count == 1)
+        {
+            //print($"{pts[0]} | {pts[1]}");
+            //ctrl.self.Fin(pts[0], pts[1]);
+
+            bool won = Menu.second ? pts[1] >= pts[0] : pts[0] >= pts[1];
+            ctrl.self.GameOver(won);
         }
     }
 
